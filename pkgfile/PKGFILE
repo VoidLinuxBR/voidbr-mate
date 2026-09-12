@@ -50,7 +50,6 @@ depends=(
 	caja-extensions
 	yelp
 	xreader
-	plank
 	brisk-menu
 	voidbr-mate-config
 )
