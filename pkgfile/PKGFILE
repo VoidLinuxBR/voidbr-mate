@@ -45,7 +45,7 @@ depends=(
 	eom
 	mozo
 	pluma
-  #
+	#
 	mate-indicator-applet
 	caja-extensions
 	yelp
@@ -54,13 +54,6 @@ depends=(
 	voidbr-mate-config
 )
 backup=()
-
-# Automatically detect and use the correct install file
-if [ -e "${pkgname}.install" ]; then
-	install=${pkgname}.install
-elif [ -e "pkgbuild.install" ]; then
-	install=pkgfile.install
-fi
 
 package() {
 	# Verify default folder
@@ -83,14 +76,10 @@ package() {
 	done
 
 	# Install license file if present
-	if [ -f "LICENSE" ]; then
-		install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-	fi
-
+	[ -f "LICENSE" ] && install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 	# Install documentation if present
-	if [ -f "README.md" ]; then
-		install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
-	fi
+	[ -f "README.md" ] && install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+
 }
 
 pre_install() {
@@ -98,15 +87,27 @@ pre_install() {
 }
 
 post_install() {
-	if [ -n "$user" ]; then
-		log "Aplicando configuracoes para $user"
-		/usr/local/bin/voidbr-copy-skel-inc --user "$user" --force --quiet || true
+	if [ "${update:-}" = "yes" ]; then
+		log "Finalizando upgrade"
+	else
+		log "Finalizando instalação"
 	fi
 
-	log "Ativando serviços"
-	/usr/local/bin/vservice add sddm --quiet || true
+	if [ -n "${MKISO_BUILD:-}" ]; then
+		echo "${YELLOW}[-]${RESET} Build de ISO detectado (MKISO_BUILD) — pulando."
+		return 0
+	fi
 
-	log "Finalizando instalação"
+	if [ -z "${VOIDBR_INSTALLER:-}" ]; then
+		if [ -n "$user" ]; then
+			log "Aplicando configuracoes para $user"
+			/usr/local/bin/voidbr-copy-skel-inc --user "$user" --force --quiet || true
+		fi
+
+		log "Ativando serviços"
+		/usr/local/bin/vservice add sddm --quiet || true
+	fi
+
 	log "${YELLOW}Instalação completa. Reinicie o sistema...${RESET}"
 }
 
@@ -115,5 +116,5 @@ pre_upgrade() {
 }
 
 post_upgrade() {
-	log "Finalizando upgrade"
+	post_install
 }
